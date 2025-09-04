@@ -477,43 +477,96 @@ Ready for some fun? Pick an option below! ⬇️{hint_text}
 
     # RUSSIAN MEME FEATURE  
     async def get_random_russian_meme(self):
-        """Get random Russian meme from Reddit API"""
-        try:
-            subreddit = random.choice(self.russian_meme_subreddits)
-            api_urls = [
-                f"https://www.reddit.com/r/{subreddit}/hot.json?limit=100",
-                f"https://www.reddit.com/r/{subreddit}/top.json?limit=50&t=week"
-            ]
+    """Fixed Russian meme fetcher with better error handling"""
+    print("🔍 Starting meme search...")
+    
+    try:
+        # Try multiple subreddits
+        subreddits = ['pikabu', 'ANormalDayInRussia', 'russia', 'russianmemes']
+        
+        for attempt in range(3):  # Try 3 times
+            subreddit = random.choice(subreddits)
+            print(f"🎯 Trying r/{subreddit} (attempt {attempt + 1})")
             
-            headers = {'User-Agent': 'DecisionBot/1.0 (Russian Meme Fetcher)'}
+            # Simple API call
+            api_url = f"https://www.reddit.com/r/{subreddit}/hot.json?limit=25"
+            headers = {'User-Agent': 'DecisionBot/1.0'}
             
             async with aiohttp.ClientSession() as session:
-                async with session.get(random.choice(api_urls), headers=headers) as response:
+                async with session.get(api_url, headers=headers, timeout=10) as response:
+                    print(f"📡 Reddit API status: {response.status}")
+                    
                     if response.status == 200:
                         data = await response.json()
-                        posts = data.get('data', {}).get('children', [])
                         
-                        image_posts = []
+                        if 'data' not in data:
+                            print("❌ No 'data' field in response")
+                            continue
+                            
+                        posts = data['data'].get('children', [])
+                        print(f"📊 Found {len(posts)} posts")
+                        
+                        if not posts:
+                            print("❌ No posts in response")
+                            continue
+                        
+                        # Try to find ANY post with image (relaxed filtering)
+                        good_posts = []
                         for post in posts:
-                            post_data = post['data']
-                            if (self.is_image_post(post_data) and 
-                                post_data.get('score', 0) > 5 and
-                                not post_data.get('over_18', False)):
-                                image_posts.append(post_data)
+                            post_data = post.get('data', {})
+                            
+                            # Very basic filtering - just check if it has a URL
+                            url = post_data.get('url', '')
+                            title = post_data.get('title', 'No title')
+                            score = post_data.get('score', 0)
+                            
+                            print(f"🔗 Post: {title[:50]}...")
+                            print(f"   URL: {url}")
+                            print(f"   Score: {score}")
+                            
+                            # Relaxed criteria - just needs a URL and positive score
+                            if (url and 
+                                score > 0 and 
+                                not post_data.get('over_18', False) and
+                                len(title) > 5):  # Basic title check
+                                
+                                # Check if it's likely an image
+                                if (url.endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')) or
+                                    'i.redd.it' in url or
+                                    'imgur.com' in url):
+                                    good_posts.append(post_data)
+                                    print(f"✅ Added to good posts")
+                                else:
+                                    print(f"❌ Not an image URL")
                         
-                        if image_posts:
-                            chosen = random.choice(image_posts)
-                            return {
+                        print(f"🎭 Found {len(good_posts)} good posts")
+                        
+                        if good_posts:
+                            chosen = random.choice(good_posts)
+                            
+                            result = {
                                 'title': chosen['title'],
-                                'url': self.get_image_url(chosen),
-                                'reddit_url': f"https://www.reddit.com{chosen['permalink']}",
-                                'subreddit': chosen['subreddit'],
+                                'url': chosen['url'],
+                                'reddit_url': f"https://www.reddit.com{chosen.get('permalink', '')}",
+                                'subreddit': chosen.get('subreddit', subreddit),
                                 'upvotes': chosen.get('score', 0),
                                 'source': 'reddit_api'
                             }
-        except Exception as e:
-            logger.error(f"Reddit API error: {e}")
+                            
+                            print(f"✅ Returning meme: {result['title'][:30]}...")
+                            return result
+                        else:
+                            print(f"❌ No good posts found in r/{subreddit}")
+                            continue
+                    else:
+                        print(f"❌ API returned {response.status}")
+                        continue
         
+        print("❌ All attempts failed")
+        return None
+        
+    except Exception as e:
+        print(f"💥 Meme fetch error: {e}")
         return None
 
     def is_image_post(self, post_data):
@@ -754,41 +807,83 @@ Ready for some fun? Pick an option below! ⬇️{hint_text}
         
         await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown')
 
-    async def russian_meme_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Russian meme handler"""
-        query = update.callback_query
-        chat_id = update.effective_chat.id
-        
-        await query.edit_message_text("🇷🇺 Searching Russian Reddit for memes... 🔍")
-        
-        meme = await self.get_random_russian_meme()
-        if not meme:
-            await query.edit_message_text("❌ No memes found!", reply_markup=self.get_back_keyboard("meme_menu"))
-            return
-        
-        mood = self.group_data[chat_id]['mood']
-        intro = "🇷🇺 Fresh Russian meme!"
-        
-        text = f"{intro}\n\n😂 **{meme['title']}**\n📍 r/{meme['subreddit']}\n⬆️ {meme['upvotes']} upvotes"
-        
-        keyboard = [
-            [InlineKeyboardButton("🎲 Another", callback_data="meme_random")],
-            [InlineKeyboardButton("🔙 Back", callback_data="meme_menu")]
-        ]
+   async def russian_meme_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """Simplified meme handler with better debugging"""
+    query = update.callback_query
+    chat_id = update.effective_chat.id
+    data = query.data
+    
+    print(f"🎭 Meme button clicked: {data}")
+    
+    if data.startswith("meme_"):
+        # Show searching message
+        await query.edit_message_text("🇷🇺 Searching for Russian memes... 🔍")
         
         try:
-            await context.bot.send_photo(
-                chat_id=chat_id,
-                photo=meme['url'],
-                caption=text,
-                reply_markup=InlineKeyboardMarkup(keyboard),
-                parse_mode='Markdown'
+            # Get meme
+            meme = await self.get_random_russian_meme()
+            
+            if not meme:
+                # If no meme found, show fallback message with debug info
+                await query.edit_message_text(
+                    "😅 **No memes found right now!**\n\n"
+                    "🔧 **Possible reasons:**\n"
+                    "• Reddit servers busy\n"
+                    "• No image posts in recent posts\n"
+                    "• Network connection issue\n\n"
+                    "Try clicking 'Another' to try again!",
+                    reply_markup=InlineKeyboardMarkup([
+                        [InlineKeyboardButton("🔄 Try Again", callback_data="meme_random")],
+                        [InlineKeyboardButton("🔙 Back", callback_data="meme_menu")]
+                    ]),
+                    parse_mode='Markdown'
+                )
+                return
+            
+            # Success! We have a meme
+            print(f"✅ Got meme: {meme['title'][:50]}")
+            
+            # Create message
+            caption = f"🇷🇺 **Russian Meme!**\n\n"
+            caption += f"😂 {meme['title'][:100]}\n\n"
+            caption += f"📍 r/{meme['subreddit']}\n"
+            caption += f"⬆️ {meme['upvotes']} upvotes"
+            
+            # Buttons
+            keyboard = [
+                [InlineKeyboardButton("🎲 Another", callback_data="meme_random")],
+                [InlineKeyboardButton("🔙 Back", callback_data="meme_menu")]
+            ]
+            
+            # Try to send image
+            try:
+                await context.bot.send_photo(
+                    chat_id=chat_id,
+                    photo=meme['url'],
+                    caption=caption,
+                    parse_mode='Markdown',
+                    reply_markup=InlineKeyboardMarkup(keyboard)
+                )
+                # Delete the "searching" message
+                await query.delete_message()
+                print("✅ Meme sent successfully!")
+                
+            except Exception as send_error:
+                print(f"📷 Failed to send image: {send_error}")
+                # Fallback to text with link
+                caption += f"\n\n🔗 [View Meme]({meme['url']})"
+                await query.edit_message_text(
+                    caption,
+                    reply_markup=InlineKeyboardMarkup(keyboard),
+                    parse_mode='Markdown'
+                )
+                
+        except Exception as e:
+            print(f"💥 Meme handler error: {e}")
+            await query.edit_message_text(
+                f"❌ Oops! Something went wrong.\n\nError: {str(e)[:100]}",
+                reply_markup=self.get_back_keyboard("meme_menu")
             )
-            await query.delete_message()
-        except:
-            text += f"\n\n🔗 [View Meme]({meme['url']})"
-            await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown')
-
     async def trivia_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Enhanced trivia with 150+ questions"""
         query = update.callback_query
