@@ -35,7 +35,7 @@ class DecisionBot:
             'mood_auto_rotate': True,
             'discovered_easter_eggs': set(),
             'music_stats': {'total_plays': 0, 'by_category': defaultdict(int), 'recent_songs': []},
-            'meme_stats': {'total_memes': 0, 'by_subreddit': {}, 'recent_memes': []}
+            'meme_stats': {'total_memes': 0, 'by_subreddit': defaultdict(int), 'recent_memes': []}
         })
         
         # YouTube API configuration
@@ -51,10 +51,10 @@ class DecisionBot:
             'random': ['music', 'song', 'musical', 'melody', 'banda', 'chanson']
         }
         
-        # Russian meme subreddits
+        # Russian meme subreddits - FIXED LIST
         self.russian_meme_subreddits = [
             'pikabu', 'ANormalDayInRussia', 'russia', 'russianmemes', 
-            'MemesRU', 'slavs_squatting', 'ukraina'
+            'MemesRU', 'slavs_squatting'
         ]
         
         # Enhanced mood system
@@ -101,7 +101,7 @@ class DecisionBot:
             }
         }
 
-        # Roasts and compliments by mood (keeping existing ones)
+        # Roasts and compliments by mood
         self.roasts = {
             'normal': [
                 "@{name}, you avoid paying bills like Neo dodges bullets in The Matrix!",
@@ -123,6 +123,27 @@ class DecisionBot:
                 "@{name}, ye avoid paying like a kraken avoids dry land!",
                 "@{name}, yer generosity be as rare as a mermaid in Moscow!",
                 "@{name}, ye'd argue with Davy Jones over the price of fish!"
+            ],
+            'dramatic': [
+                "@{name}, your wallet remains SEALED by the ancient curse of cheapness!",
+                "@{name}, the EPIC battle between you and your money continues!",
+                "@{name}, BEHOLD! The legendary master of bill avoidance!",
+                "@{name}, your generosity is the stuff of MYTHS and LEGENDS!",
+                "@{name}, even Greek gods would be AMAZED by your frugality!"
+            ],
+            'cyberpunk': [
+                "@{name}, your credit chip is more encrypted than government data!",
+                "@{name}, you hack your way out of payments better than any netrunner!",
+                "@{name}, your wallet.exe has stopped working permanently!",
+                "@{name}, even AI can't calculate your level of cheapness!",
+                "@{name}, you dodge bills like bullets in bullet-time!"
+            ],
+            'anime': [
+                "@{name}, your tsundere relationship with money is showing!",
+                "@{name}, you protect your wallet like it's the last Dragon Ball!",
+                "@{name}, your generosity power level is... it's under 9000!",
+                "@{name}, even Saitama couldn't punch sense into your spending!",
+                "@{name}, you're the main character of 'My Wallet Can't Be This Empty!'"
             ]
         }
 
@@ -133,6 +154,27 @@ class DecisionBot:
                 "@{name}, you're as awesome as finding the perfect ramen spot!",
                 "@{name}, your vibe is more refreshing than cherry blossoms!",
                 "@{name}, you're smoother than sake on a Saturday night!"
+            ],
+            'sarcastic': [
+                "@{name}, you're actually... *surprisingly* not terrible today!",
+                "@{name}, congratulations, you've achieved basic human decency!",
+                "@{name}, well look at you being *almost* impressive!",
+                "@{name}, your existence isn't completely pointless! Amazing!",
+                "@{name}, you've managed to not disappoint me for once!"
+            ],
+            'pirate': [
+                "@{name}, ye be as valuable as Spanish gold, matey!",
+                "@{name}, yer heart be as big as the seven seas!",
+                "@{name}, ye be a true treasure, worth more than all of Tortuga!",
+                "@{name}, yer spirit shines brighter than the North Star!",
+                "@{name}, ye be the finest sailor in all the Caribbean!"
+            ],
+            'pokemon': [
+                "@{name}, you're rarer than a shiny Pokémon!",
+                "@{name}, your friendship power is super effective!",
+                "@{name}, you're the very best, like no one ever was!",
+                "@{name}, you've got the heart of a Pokémon master!",
+                "@{name}, your kindness is legendary type!"
             ]
         }
 
@@ -149,7 +191,7 @@ class DecisionBot:
             {"question": "What does 'Da' mean in Russian?", "options": ["No", "Maybe", "Yes", "Hello"], "answer": "Yes", "category": "Russian"},
             {"question": "Which Russian composer wrote 'Swan Lake'?", "options": ["Tchaikovsky", "Stravinsky", "Rachmaninoff", "Rimsky-Korsakov"], "answer": "Tchaikovsky", "category": "Russian"},
             {"question": "What is the Russian currency?", "options": ["Ruble", "Hryvnia", "Kopeck", "Mark"], "answer": "Ruble", "category": "Russian"},
-            {"question": "Which Russian writer created Sherlock Holmes-like detective Erast Fandorin?", "options": ["Boris Akunin", "Victor Pelevin", "Vladimir Sorokin", "Tatyana Tolstaya"], "answer": "Boris Akunin", "category": "Russian"},
+            {"question": "Which Russian writer created detective Erast Fandorin?", "options": ["Boris Akunin", "Victor Pelevin", "Vladimir Sorokin", "Tatyana Tolstaya"], "answer": "Boris Akunin", "category": "Russian"},
             {"question": "What is the name of the famous Russian theater in Moscow?", "options": ["Bolshoi", "Mariinsky", "Moscow Art", "Vakhtangov"], "answer": "Bolshoi", "category": "Russian"},
             {"question": "Which Russian city was formerly called Leningrad?", "options": ["Moscow", "St. Petersburg", "Volgograd", "Kaliningrad"], "answer": "St. Petersburg", "category": "Russian"},
             {"question": "What is the traditional Russian alcoholic drink?", "options": ["Vodka", "Beer", "Wine", "Whiskey"], "answer": "Vodka", "category": "Russian"},
@@ -175,7 +217,7 @@ class DecisionBot:
             {"question": "What is the Japanese currency?", "options": ["Yen", "Won", "Yuan", "Ringgit"], "answer": "Yen", "category": "Japanese"},
             {"question": "What does 'Kawaii' mean?", "options": ["Cool", "Cute", "Amazing", "Scary"], "answer": "Cute", "category": "Japanese"},
             {"question": "Which Japanese city hosted the 2020 Olympics?", "options": ["Tokyo", "Osaka", "Kyoto", "Hiroshima"], "answer": "Tokyo", "category": "Japanese"},
-            {"question": "What is the traditional Japanese writing system with Chinese characters?", "options": ["Hiragana", "Katakana", "Kanji", "Romaji"], "answer": "Kanji", "category": "Japanese"},
+            {"question": "What is the traditional Japanese writing with Chinese characters?", "options": ["Hiragana", "Katakana", "Kanji", "Romaji"], "answer": "Kanji", "category": "Japanese"},
             {"question": "What is the Japanese word for 'cherry blossom'?", "options": ["Sakura", "Momiji", "Tsubaki", "Ajisai"], "answer": "Sakura", "category": "Japanese"},
             {"question": "Which Japanese martial art means 'gentle way'?", "options": ["Karate", "Judo", "Kendo", "Aikido"], "answer": "Judo", "category": "Japanese"},
             {"question": "What is the traditional Japanese religion?", "options": ["Buddhism", "Shinto", "Christianity", "Islam"], "answer": "Shinto", "category": "Japanese"},
@@ -187,7 +229,6 @@ class DecisionBot:
             {"question": "What's the highest grossing anime movie?", "options": ["Your Name", "Demon Slayer", "Spirited Away", "Princess Mononoke"], "answer": "Demon Slayer", "category": "Pop Culture"},
             {"question": "In what game do you 'catch 'em all'?", "options": ["Digimon", "Pokemon", "Yu-Gi-Oh", "Monster Hunter"], "answer": "Pokemon", "category": "Pop Culture"},
             {"question": "Which studio made 'Attack on Titan'?", "options": ["Mappa", "Pierrot", "Madhouse", "Bones"], "answer": "Mappa", "category": "Pop Culture"},
-            {"question": "What does 'Kawaii' mean?", "options": ["Cool", "Cute", "Amazing", "Scary"], "answer": "Cute", "category": "Pop Culture"},
             {"question": "Which anime character is known for saying 'Believe it!'?", "options": ["Goku", "Naruto", "Luffy", "Ichigo"], "answer": "Naruto", "category": "Pop Culture"},
             {"question": "What is the name of Pikachu's trainer?", "options": ["Ash", "Gary", "Brock", "Misty"], "answer": "Ash", "category": "Pop Culture"},
             {"question": "Which manga is about a boy who can turn into a chainsaw?", "options": ["Chainsaw Man", "Demon Slayer", "Jujutsu Kaisen", "Tokyo Ghoul"], "answer": "Chainsaw Man", "category": "Pop Culture"},
@@ -329,7 +370,7 @@ class DecisionBot:
         ]
 
     def get_main_menu_keyboard(self, chat_id):
-        """Enhanced main menu with all new features"""
+        """Enhanced main menu with all features"""
         mood_emoji = self.moods[self.group_data[chat_id]['mood']]['emoji']
         
         keyboard = [
@@ -424,6 +465,7 @@ Ready for some fun? Pick an option below! ⬇️{hint_text}
     async def get_random_youtube_music(self, category='random'):
         """Get random music from YouTube API"""
         if not self.YOUTUBE_API_KEY:
+            logger.info("No YouTube API key, using fallback songs")
             return self.get_fallback_song(category)
         
         try:
@@ -464,7 +506,8 @@ Ready for some fun? Pick an option below! ⬇️{hint_text}
         fallback_songs = {
             'russian': {'title': 'Kalinka', 'artist': 'Traditional', 'video_id': 'lNYcviXK4rg'},
             'japanese': {'title': 'Plastic Love', 'artist': 'Mariya Takeuchi', 'video_id': '3bNITQR4Uso'},
-            'anime': {'title': 'Tank!', 'artist': 'Seatbelts', 'video_id': 'NRI_8PUXx2A'}
+            'anime': {'title': 'Tank!', 'artist': 'Seatbelts', 'video_id': 'NRI_8PUXx2A'},
+            'global': {'title': 'Bohemian Rhapsody', 'artist': 'Queen', 'video_id': 'fJ9rUzIMcZQ'}
         }
         
         song = fallback_songs.get(category, fallback_songs['russian'])
@@ -475,119 +518,284 @@ Ready for some fun? Pick an option below! ⬇️{hint_text}
             'source': 'fallback'
         }
 
-    # RUSSIAN MEME FEATURE  
+    # FIXED RUSSIAN MEME FEATURE  
     async def get_random_russian_meme(self):
-    """Fixed Russian meme fetcher with better error handling"""
-    print("🔍 Starting meme search...")
-    
-    try:
-        # Try multiple subreddits
-        subreddits = ['pikabu', 'ANormalDayInRussia', 'russia', 'russianmemes']
+        """FIXED: Get random Russian meme from Reddit API with better error handling"""
+        logger.info("🔍 Starting meme search...")
         
-        for attempt in range(3):  # Try 3 times
-            subreddit = random.choice(subreddits)
-            print(f"🎯 Trying r/{subreddit} (attempt {attempt + 1})")
+        try:
+            # Try multiple subreddits
+            subreddits = ['pikabu', 'ANormalDayInRussia', 'russia', 'russianmemes']
             
-            # Simple API call
-            api_url = f"https://www.reddit.com/r/{subreddit}/hot.json?limit=25"
-            headers = {'User-Agent': 'DecisionBot/1.0'}
-            
-            async with aiohttp.ClientSession() as session:
-                async with session.get(api_url, headers=headers, timeout=10) as response:
-                    print(f"📡 Reddit API status: {response.status}")
-                    
-                    if response.status == 200:
-                        data = await response.json()
+            for attempt in range(3):  # Try 3 times
+                subreddit = random.choice(subreddits)
+                logger.info(f"🎯 Trying r/{subreddit} (attempt {attempt + 1})")
+                
+                # Simple API call
+                api_url = f"https://www.reddit.com/r/{subreddit}/hot.json?limit=25"
+                headers = {'User-Agent': 'DecisionBot/1.0'}
+                
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(api_url, headers=headers, timeout=10) as response:
+                        logger.info(f"📡 Reddit API status: {response.status}")
                         
-                        if 'data' not in data:
-                            print("❌ No 'data' field in response")
-                            continue
+                        if response.status == 200:
+                            data = await response.json()
                             
-                        posts = data['data'].get('children', [])
-                        print(f"📊 Found {len(posts)} posts")
-                        
-                        if not posts:
-                            print("❌ No posts in response")
-                            continue
-                        
-                        # Try to find ANY post with image (relaxed filtering)
-                        good_posts = []
-                        for post in posts:
-                            post_data = post.get('data', {})
-                            
-                            # Very basic filtering - just check if it has a URL
-                            url = post_data.get('url', '')
-                            title = post_data.get('title', 'No title')
-                            score = post_data.get('score', 0)
-                            
-                            print(f"🔗 Post: {title[:50]}...")
-                            print(f"   URL: {url}")
-                            print(f"   Score: {score}")
-                            
-                            # Relaxed criteria - just needs a URL and positive score
-                            if (url and 
-                                score > 0 and 
-                                not post_data.get('over_18', False) and
-                                len(title) > 5):  # Basic title check
+                            if 'data' not in data:
+                                logger.warning("❌ No 'data' field in response")
+                                continue
                                 
-                                # Check if it's likely an image
-                                if (url.endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')) or
-                                    'i.redd.it' in url or
-                                    'imgur.com' in url):
-                                    good_posts.append(post_data)
-                                    print(f"✅ Added to good posts")
-                                else:
-                                    print(f"❌ Not an image URL")
-                        
-                        print(f"🎭 Found {len(good_posts)} good posts")
-                        
-                        if good_posts:
-                            chosen = random.choice(good_posts)
+                            posts = data['data'].get('children', [])
+                            logger.info(f"📊 Found {len(posts)} posts")
                             
-                            result = {
-                                'title': chosen['title'],
-                                'url': chosen['url'],
-                                'reddit_url': f"https://www.reddit.com{chosen.get('permalink', '')}",
-                                'subreddit': chosen.get('subreddit', subreddit),
-                                'upvotes': chosen.get('score', 0),
-                                'source': 'reddit_api'
-                            }
+                            if not posts:
+                                logger.warning("❌ No posts in response")
+                                continue
                             
-                            print(f"✅ Returning meme: {result['title'][:30]}...")
-                            return result
+                            # Try to find ANY post with image (relaxed filtering)
+                            good_posts = []
+                            for post in posts:
+                                post_data = post.get('data', {})
+                                
+                                # Very basic filtering - just check if it has a URL
+                                url = post_data.get('url', '')
+                                title = post_data.get('title', 'No title')
+                                score = post_data.get('score', 0)
+                                
+                                # Relaxed criteria - just needs a URL and positive score
+                                if (url and 
+                                    score > 0 and 
+                                    not post_data.get('over_18', False) and
+                                    len(title) > 5):  # Basic title check
+                                    
+                                    # Check if it's likely an image
+                                    if (url.endswith(('.jpg', '.jpeg', '.png', '.gif', '.webp')) or
+                                        'i.redd.it' in url or
+                                        'imgur.com' in url):
+                                        good_posts.append(post_data)
+                            
+                            logger.info(f"🎭 Found {len(good_posts)} good posts")
+                            
+                            if good_posts:
+                                chosen = random.choice(good_posts)
+                                
+                                result = {
+                                    'title': chosen['title'],
+                                    'url': chosen['url'],
+                                    'reddit_url': f"https://www.reddit.com{chosen.get('permalink', '')}",
+                                    'subreddit': chosen.get('subreddit', subreddit),
+                                    'upvotes': chosen.get('score', 0),
+                                    'source': 'reddit_api'
+                                }
+                                
+                                logger.info(f"✅ Returning meme: {result['title'][:30]}...")
+                                return result
+                            else:
+                                logger.warning(f"❌ No good posts found in r/{subreddit}")
+                                continue
                         else:
-                            print(f"❌ No good posts found in r/{subreddit}")
+                            logger.warning(f"❌ API returned {response.status}")
                             continue
+            
+            logger.warning("❌ All attempts failed")
+            return None
+            
+        except Exception as e:
+            logger.error(f"💥 Meme fetch error: {e}")
+            return None
+
+    # ENHANCED MEME HANDLERS
+    async def meme_menu_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Russian meme menu handler"""
+        query = update.callback_query
+        chat_id = update.effective_chat.id
+        
+        # Show stats
+        stats = self.group_data[chat_id]['meme_stats']
+        total_memes = stats.get('total_memes', 0)
+        stats_text = f"\n🎭 Memes shared: {total_memes}" if total_memes > 0 else ""
+        
+        text = f"""🇷🇺 **Russian Meme Generator** 🇷🇺
+
+Fresh memes from Russian Reddit communities!
+*Warning: May cause uncontrollable laughter* 😂{stats_text}
+        """
+        
+        keyboard = [
+            [
+                InlineKeyboardButton("🎲 Random", callback_data="meme_random"),
+                InlineKeyboardButton("🔥 Hot", callback_data="meme_hot")
+            ],
+            [
+                InlineKeyboardButton("👑 Top", callback_data="meme_top"),
+                InlineKeyboardButton("🇷🇺 Russia", callback_data="meme_russia")
+            ],
+            [
+                InlineKeyboardButton("😂 Pikabu", callback_data="meme_pikabu"),
+                InlineKeyboardButton("📊 Stats", callback_data="meme_stats")
+            ],
+            [
+                InlineKeyboardButton("🔙 Back", callback_data="main_menu")
+            ]
+        ]
+        
+        await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown')
+
+    async def russian_meme_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """FIXED: Russian meme handler with better debugging"""
+        query = update.callback_query
+        chat_id = update.effective_chat.id
+        data = query.data
+        
+        logger.info(f"🎭 Meme button clicked: {data}")
+        
+        if data.startswith("meme_") and data != "meme_stats":
+            meme_type = data.split("_")[-1]
+            
+            # Show searching message
+            loading_messages = [
+                "🇷🇺 Searching Russian internet for memes... 🔍",
+                "🤖 Consulting babushka's meme collection... 👵",
+                "⚡ Downloading from Siberian servers... 🌨️",
+                "🎭 Asking Russian Reddit for their finest... 🎪"
+            ]
+            
+            await query.edit_message_text(random.choice(loading_messages))
+            
+            try:
+                # Get meme
+                logger.info("📡 Calling get_random_russian_meme...")
+                meme = await self.get_random_russian_meme()
+                logger.info(f"🎭 Meme result: {'Found' if meme else 'None'}")
+                
+                if not meme:
+                    logger.warning("❌ No meme returned")
+                    await query.edit_message_text(
+                        "😅 **No memes found right now!**\n\n"
+                        "🔧 **Possible reasons:**\n"
+                        "• Reddit servers busy\n"
+                        "• No image posts in recent posts\n"
+                        "• Network connection issue\n\n"
+                        "Try clicking 'Try Again' to try again!",
+                        reply_markup=InlineKeyboardMarkup([
+                            [InlineKeyboardButton("🔄 Try Again", callback_data="meme_random")],
+                            [InlineKeyboardButton("🔙 Back", callback_data="meme_menu")]
+                        ]),
+                        parse_mode='Markdown'
+                    )
+                    return
+                
+                # Success! We have a meme
+                logger.info(f"✅ Got meme: {meme['title'][:50]}")
+                
+                # Update stats
+                stats = self.group_data[chat_id]['meme_stats']
+                stats['total_memes'] += 1
+                
+                subreddit = meme.get('subreddit', 'unknown')
+                if subreddit not in stats['by_subreddit']:
+                    stats['by_subreddit'][subreddit] = 0
+                stats['by_subreddit'][subreddit] += 1
+                
+                # Create mood-specific response
+                mood = self.group_data[chat_id]['mood']
+                mood_responses = {
+                    'pirate': "🏴‍☠️ Arrr! Russian treasure from the meme seas!",
+                    'cyberpunk': "🌃 Meme data from Russian neural network...",
+                    'anime': "🎌 Russian meme-chan appeared! Kawaii!",
+                    'sarcastic': "😏 Oh great, *another* Russian meme...",
+                    'pokemon': "⚡ Wild Russian Meme appeared!",
+                    'dramatic': "🎭 BEHOLD! The most EPIC Russian meme!",
+                    'gaming': "🎮 Achievement unlocked: Russian Meme Master!"
+                }
+                
+                intro = mood_responses.get(mood, "🇷🇺 Fresh Russian meme!")
+                
+                # Create caption
+                caption = f"{intro}\n\n"
+                caption += f"😂 **{meme['title'][:100]}{'...' if len(meme['title']) > 100 else ''}**\n\n"
+                
+                if meme.get('upvotes'):
+                    caption += f"⬆️ {meme['upvotes']} upvotes\n"
+                if meme.get('subreddit'):
+                    caption += f"📍 r/{meme['subreddit']}\n"
+                
+                total = stats['total_memes']
+                caption += f"\n🎭 Meme #{total} in this group!"
+                
+                # Buttons
+                keyboard = [
+                    [
+                        InlineKeyboardButton("🎲 Another", callback_data="meme_random"),
+                        InlineKeyboardButton("🔥 Hot", callback_data="meme_hot")
+                    ],
+                    [
+                        InlineKeyboardButton("🔙 Back", callback_data="meme_menu")
+                    ]
+                ]
+                
+                # Try to send image
+                logger.info(f"📷 Trying to send image: {meme.get('url')}")
+                try:
+                    if meme.get('url') and meme['url'].startswith('http'):
+                        await context.bot.send_photo(
+                            chat_id=chat_id,
+                            photo=meme['url'],
+                            caption=caption,
+                            parse_mode='Markdown',
+                            reply_markup=InlineKeyboardMarkup(keyboard)
+                        )
+                        await query.delete_message()
+                        logger.info("✅ Image sent successfully")
                     else:
-                        print(f"❌ API returned {response.status}")
-                        continue
+                        raise Exception("Invalid image URL")
+                        
+                except Exception as img_error:
+                    logger.error(f"📷 Image send failed: {img_error}")
+                    # Fallback to text message with link
+                    caption += f"\n\n🔗 [View Meme]({meme.get('url', 'https://reddit.com')})"
+                    await query.edit_message_text(
+                        caption,
+                        reply_markup=InlineKeyboardMarkup(keyboard),
+                        parse_mode='Markdown'
+                    )
+                    
+            except Exception as e:
+                logger.error(f"💥 Meme handler error: {e}")
+                await query.edit_message_text(
+                    f"❌ Oops! Something went wrong.\n\nError: {str(e)[:100]}\n\nTry again or check your connection!",
+                    reply_markup=InlineKeyboardMarkup([
+                        [InlineKeyboardButton("🔄 Try Again", callback_data="meme_random")],
+                        [InlineKeyboardButton("🔙 Back", callback_data="meme_menu")]
+                    ])
+                )
         
-        print("❌ All attempts failed")
-        return None
-        
-    except Exception as e:
-        print(f"💥 Meme fetch error: {e}")
-        return None
+        elif data == "meme_stats":
+            await self.show_meme_stats(query, chat_id)
 
-    def is_image_post(self, post_data):
-        """Check if Reddit post contains an image"""
-        url = post_data.get('url', '')
-        return (any(url.lower().endswith(ext) for ext in ['.jpg', '.jpeg', '.png', '.gif', '.webp']) or
-                'i.redd.it' in url or
-                ('imgur.com' in url and '/a/' not in url))
-
-    def get_image_url(self, post_data):
-        """Extract image URL from Reddit post"""
-        url = post_data.get('url', '')
+    async def show_meme_stats(self, query, chat_id):
+        """Show meme statistics"""
+        stats = self.group_data[chat_id]['meme_stats']
         
-        if any(url.lower().endswith(ext) for ext in ['.jpg', '.jpeg', '.png', '.gif', '.webp']):
-            return url
-        if 'i.redd.it' in url:
-            return url
-        if 'imgur.com' in url and '/a/' not in url:
-            return url + '.jpg' if not url.lower().endswith(('.jpg', '.png', '.gif')) else url
+        if not stats or stats.get('total_memes', 0) == 0:
+            text = "📊 **Russian Meme Stats** 📊\n\nNo memes shared yet! Start the Russian meme revolution! 🇷🇺"
+        else:
+            total = stats['total_memes']
+            by_subreddit = stats.get('by_subreddit', {})
+            
+            text = f"📊 **Russian Meme Stats** 📊\n\n"
+            text += f"😂 **Total Memes:** {total}\n\n"
+            
+            if by_subreddit:
+                text += "**📈 Top Sources:**\n"
+                sorted_subreddits = sorted(by_subreddit.items(), key=lambda x: x[1], reverse=True)
+                for subreddit, count in sorted_subreddits[:5]:
+                    percentage = (count / total * 100)
+                    text += f"• r/{subreddit}: {count} ({percentage:.0f}%)\n"
         
-        return url
+        keyboard = self.get_back_keyboard("meme_menu")
+        await query.edit_message_text(text, reply_markup=keyboard, parse_mode='Markdown')
 
     async def get_group_members(self, context: ContextTypes.DEFAULT_TYPE, chat_id):
         """Get actual group members"""
@@ -626,7 +834,144 @@ Ready for some fun? Pick an option below! ⬇️{hint_text}
                 members.append(MockUser(user_id, self.group_data[chat_id]['nicknames']))
             return members
 
-    # ENHANCED DRINKING GAMES WITH NEW QUESTIONS
+    # ALL MAIN HANDLERS
+    async def handle_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle all button callbacks with FIXED meme routing"""
+        query = update.callback_query
+        await query.answer()
+        
+        chat_id = update.effective_chat.id
+        user = update.effective_user
+        data = query.data
+        
+        if user:
+            self.group_data[chat_id]['active_members'].add(user.id)
+
+        # Direct handlers
+        direct_handlers = {
+            "main_menu": self.start,
+            "who_pays": self.who_pays_handler,
+            "music_menu": self.music_menu_handler,
+            "meme_menu": self.meme_menu_handler,  # FIXED: Added meme menu
+            "drinking_menu": self.drinking_menu_handler,
+            "trivia_menu": self.trivia_menu_handler,
+            "mood_menu": self.mood_menu_handler,
+            "coin_flip": self.coin_flip_handler,
+            "roll_dice": self.roll_dice_handler,
+            "choose_menu": self.choose_menu_handler,
+            "vote_menu": self.vote_menu_handler,
+            "roast_menu": self.roast_menu_handler,
+            "games_menu": self.games_menu_handler,
+            "stats_menu": self.stats_menu_handler
+        }
+        
+        # Check direct handlers first
+        if data in direct_handlers:
+            await direct_handlers[data](update, context)
+            return
+        
+        # Prefix handlers - FIXED: Added all missing handlers
+        if data.startswith("ytmusic_") or data == "music_stats":
+            await self.youtube_music_handler(update, context)
+        elif data.startswith("meme_"):  # FIXED: Meme handler routing
+            await self.russian_meme_handler(update, context)
+        elif data.startswith("drink_"):
+            await self.drink_handler(update, context)
+        elif data.startswith("trivia_"):
+            await self.trivia_handler(update, context)
+        elif data.startswith("vote_"):
+            await self.vote_handler(update, context)
+        elif data.startswith("roast_"):
+            await self.roast_handler(update, context)
+        elif data.startswith("set_mood_") or data == "toggle_auto_rotate":
+            await self.set_mood_handler(update, context)
+        elif data.startswith("choose_option_"):
+            await self.choose_option_handler(update, context)
+        elif data.startswith("split_"):
+            await self.split_bill_handler(update, context)
+        elif data.startswith("lottery_"):
+            await self.lottery_action_handler(update, context)
+        elif data == "lottery":
+            await self.lottery_handler(update, context)
+        elif data == "roulette":
+            await self.roulette_handler(update, context)
+        elif data == "karma":
+            await self.karma_handler(update, context)
+        elif data == "history":
+            await self.history_handler(update, context)
+        else:
+            # Log unhandled callbacks for debugging
+            logger.warning(f"Unhandled callback: {data}")
+
+    # CORE FEATURE HANDLERS (keeping all existing functionality)
+    async def who_pays_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Who pays handler"""
+        query = update.callback_query
+        chat_id = update.effective_chat.id
+        
+        members = await self.get_group_members(context, chat_id)
+        if len(members) < 2:
+            await query.edit_message_text("❌ Need at least 2 people!", reply_markup=self.get_back_keyboard())
+            return
+        
+        chosen = random.choice(members)
+        self.group_data[chat_id]['karma'][chosen.id] += 1
+        
+        display_name = self.group_data[chat_id]['nicknames'].get(chosen.id, chosen.first_name)
+        mood = self.group_data[chat_id]['mood']
+        message = random.choice(self.moods[mood]['messages'])
+        
+        await self.suspense_reveal(query, f"💸 **{display_name}** pays! 💸\n\n{message}", self.get_back_keyboard())
+
+    async def youtube_music_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """YouTube music handler"""
+        query = update.callback_query
+        chat_id = update.effective_chat.id
+        category = query.data.split("_")[-1]
+        
+        await query.edit_message_text("🎵 Finding random music on YouTube... 🔍")
+        
+        song = await self.get_random_youtube_music(category)
+        if not song:
+            await query.edit_message_text("❌ No music found!", reply_markup=self.get_back_keyboard("music_menu"))
+            return
+        
+        mood = self.group_data[chat_id]['mood']
+        intro = f"🎵 Random {category} music found!"
+        
+        text = f"{intro}\n\n🎶 **{song['title']}**\n🎤 {song['artist']}\n\n🔗 [Listen on YouTube]({song['url']})"
+        
+        keyboard = [
+            [InlineKeyboardButton("🎲 Another", callback_data=f"ytmusic_{category}")],
+            [InlineKeyboardButton("🔙 Back", callback_data="music_menu")]
+        ]
+        
+        await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown')
+
+    async def music_menu_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Music menu handler"""
+        query = update.callback_query
+        
+        api_status = "🟢 YouTube API" if self.YOUTUBE_API_KEY else "🟡 Curated Songs"
+        
+        text = f"""🎵 **Music Selector** 🎵
+
+Random music from YouTube's vast library!
+{api_status}
+        """
+        
+        keyboard = [
+            [InlineKeyboardButton("🇷🇺 Russian", callback_data="ytmusic_russian"),
+             InlineKeyboardButton("🇯🇵 Japanese", callback_data="ytmusic_japanese")],
+            [InlineKeyboardButton("🎌 Anime", callback_data="ytmusic_anime"),
+             InlineKeyboardButton("🌍 Global", callback_data="ytmusic_global")],
+            [InlineKeyboardButton("🎲 Surprise!", callback_data="ytmusic_random")],
+            [InlineKeyboardButton("🔙 Back", callback_data="main_menu")]
+        ]
+        
+        await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown')
+
+    # ENHANCED DRINKING GAMES WITH 100+ QUESTIONS
     async def drinking_menu_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Enhanced drinking games menu"""
         query = update.callback_query
@@ -651,9 +996,6 @@ Ready for some fun? Pick an option below! ⬇️{hint_text}
             ],
             [
                 InlineKeyboardButton("🎰 Roulette", callback_data="drink_roulette"),
-                InlineKeyboardButton("🎯 Truth/Sip", callback_data="drink_truth")
-            ],
-            [
                 InlineKeyboardButton("📊 Leaderboard", callback_data="drink_stats")
             ],
             [
@@ -720,170 +1062,49 @@ Ready for some fun? Pick an option below! ⬇️{hint_text}
             ]
             
             await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown')
-
-    # ALL OTHER EXISTING HANDLERS (keeping them compact for space)
-    async def handle_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Handle all button callbacks"""
-        query = update.callback_query
-        await query.answer()
         
-        chat_id = update.effective_chat.id
-        user = update.effective_user
-        data = query.data
-        
-        if user:
-            self.group_data[chat_id]['active_members'].add(user.id)
-
-        # Main handlers
-        handlers = {
-            "main_menu": self.start,
-            "who_pays": self.who_pays_handler,
-            "music_menu": self.music_menu_handler,
-            "meme_menu": self.meme_menu_handler,
-            "drinking_menu": self.drinking_menu_handler,
-            "trivia_menu": self.trivia_menu_handler,
-            "mood_menu": self.mood_menu_handler,
-            "coin_flip": self.coin_flip_handler,
-            "roll_dice": self.roll_dice_handler
-        }
-        
-        for callback_name, handler in handlers.items():
-            if data == callback_name:
-                await handler(update, context)
-                return
-        
-        # Prefix handlers
-        if data.startswith("ytmusic_"):
-            await self.youtube_music_handler(update, context)
-        elif data.startswith("meme_"):
-            await self.russian_meme_handler(update, context)
-        elif data.startswith("drink_"):
-            await self.drink_handler(update, context)
-        elif data.startswith("trivia_"):
-            await self.trivia_handler(update, context)
-
-    # Compact implementations of key handlers
-    async def who_pays_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Who pays handler"""
-        query = update.callback_query
-        chat_id = update.effective_chat.id
-        
-        members = await self.get_group_members(context, chat_id)
-        if len(members) < 2:
-            await query.edit_message_text("❌ Need at least 2 people!", reply_markup=self.get_back_keyboard())
-            return
-        
-        chosen = random.choice(members)
-        self.group_data[chat_id]['karma'][chosen.id] += 1
-        
-        display_name = self.group_data[chat_id]['nicknames'].get(chosen.id, chosen.first_name)
-        mood = self.group_data[chat_id]['mood']
-        message = random.choice(self.moods[mood]['messages'])
-        
-        await self.suspense_reveal(query, f"💸 **{display_name}** pays! 💸\n\n{message}", self.get_back_keyboard())
-
-    async def youtube_music_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """YouTube music handler"""
-        query = update.callback_query
-        chat_id = update.effective_chat.id
-        category = query.data.split("_")[-1]
-        
-        await query.edit_message_text("🎵 Finding random music on YouTube... 🔍")
-        
-        song = await self.get_random_youtube_music(category)
-        if not song:
-            await query.edit_message_text("❌ No music found!", reply_markup=self.get_back_keyboard("music_menu"))
-            return
-        
-        mood = self.group_data[chat_id]['mood']
-        intro = f"🎵 Random {category} music found!"
-        
-        text = f"{intro}\n\n🎶 **{song['title']}**\n🎤 {song['artist']}\n\n🔗 [Listen on YouTube]({song['url']})"
-        
-        keyboard = [
-            [InlineKeyboardButton("🎲 Another", callback_data=f"ytmusic_{category}")],
-            [InlineKeyboardButton("🔙 Back", callback_data="music_menu")]
-        ]
-        
-        await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown')
-
-   async def russian_meme_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Simplified meme handler with better debugging"""
-    query = update.callback_query
-    chat_id = update.effective_chat.id
-    data = query.data
-    
-    print(f"🎭 Meme button clicked: {data}")
-    
-    if data.startswith("meme_"):
-        # Show searching message
-        await query.edit_message_text("🇷🇺 Searching for Russian memes... 🔍")
-        
-        try:
-            # Get meme
-            meme = await self.get_random_russian_meme()
+        elif data == "drink_flip":
+            result = random.choice(['Heads', 'Tails'])
+            user_choice = random.choice(['Heads', 'Tails'])  # Random for demo
             
-            if not meme:
-                # If no meme found, show fallback message with debug info
-                await query.edit_message_text(
-                    "😅 **No memes found right now!**\n\n"
-                    "🔧 **Possible reasons:**\n"
-                    "• Reddit servers busy\n"
-                    "• No image posts in recent posts\n"
-                    "• Network connection issue\n\n"
-                    "Try clicking 'Another' to try again!",
-                    reply_markup=InlineKeyboardMarkup([
-                        [InlineKeyboardButton("🔄 Try Again", callback_data="meme_random")],
-                        [InlineKeyboardButton("🔙 Back", callback_data="meme_menu")]
-                    ]),
-                    parse_mode='Markdown'
-                )
-                return
+            if result != user_choice:
+                self.group_data[chat_id]['sip_counts'][user.id] += 2
+                text = f"🪙 Coin: **{result}**\n❌ You lose! Take 2 sips! 🍻"
+            else:
+                text = f"🪙 Coin: **{result}**\n✅ You win! No sips! 🎉"
             
-            # Success! We have a meme
-            print(f"✅ Got meme: {meme['title'][:50]}")
-            
-            # Create message
-            caption = f"🇷🇺 **Russian Meme!**\n\n"
-            caption += f"😂 {meme['title'][:100]}\n\n"
-            caption += f"📍 r/{meme['subreddit']}\n"
-            caption += f"⬆️ {meme['upvotes']} upvotes"
-            
-            # Buttons
             keyboard = [
-                [InlineKeyboardButton("🎲 Another", callback_data="meme_random")],
-                [InlineKeyboardButton("🔙 Back", callback_data="meme_menu")]
+                [InlineKeyboardButton("🪙 Flip Again", callback_data="drink_flip")],
+                [InlineKeyboardButton("🔙 Back", callback_data="drinking_menu")]
             ]
             
-            # Try to send image
-            try:
-                await context.bot.send_photo(
-                    chat_id=chat_id,
-                    photo=meme['url'],
-                    caption=caption,
-                    parse_mode='Markdown',
-                    reply_markup=InlineKeyboardMarkup(keyboard)
-                )
-                # Delete the "searching" message
-                await query.delete_message()
-                print("✅ Meme sent successfully!")
+            await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown')
+        
+        elif data == "drink_stats":
+            await self.show_sip_stats(query, chat_id)
+
+    async def show_sip_stats(self, query, chat_id):
+        """Show drinking game statistics"""
+        sips = self.group_data[chat_id]['sip_counts']
+        
+        if not sips:
+            text = "📊 **Sip Leaderboard** 📊\n\nNo sips recorded yet!"
+        else:
+            sorted_sips = sorted(sips.items(), key=lambda x: x[1], reverse=True)
+            
+            text = "📊 **Sip Leaderboard** 📊\n\n"
+            
+            for i, (user_id, count) in enumerate(sorted_sips[:10]):
+                display_name = self.group_data[chat_id]['nicknames'].get(user_id, f"User {user_id}")
+                emojis = ["🍺👑", "🍻🥈", "🥃🥉", "🍷", "🍷", "🍷", "🍷", "🍷", "🍷", "🍷"]
+                emoji = emojis[i] if i < len(emojis) else "🍷"
                 
-            except Exception as send_error:
-                print(f"📷 Failed to send image: {send_error}")
-                # Fallback to text with link
-                caption += f"\n\n🔗 [View Meme]({meme['url']})"
-                await query.edit_message_text(
-                    caption,
-                    reply_markup=InlineKeyboardMarkup(keyboard),
-                    parse_mode='Markdown'
-                )
-                
-        except Exception as e:
-            print(f"💥 Meme handler error: {e}")
-            await query.edit_message_text(
-                f"❌ Oops! Something went wrong.\n\nError: {str(e)[:100]}",
-                reply_markup=self.get_back_keyboard("meme_menu")
-            )
+                text += f"{emoji} {display_name}: {count} sips\n"
+        
+        keyboard = self.get_back_keyboard("drinking_menu")
+        await query.edit_message_text(text, reply_markup=keyboard, parse_mode='Markdown')
+
+    # COMPACT IMPLEMENTATIONS OF OTHER HANDLERS (keeping all existing functionality but concise)
     async def trivia_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Enhanced trivia with 150+ questions"""
         query = update.callback_query
@@ -901,7 +1122,7 @@ Ready for some fun? Pick an option below! ⬇️{hint_text}
                 questions = [q for q in self.trivia_questions if q['category'] == category_map.get(category, "")]
             
             if not questions:
-                await query.edit_message_text("No questions available!")
+                await query.edit_message_text("No questions available!", reply_markup=self.get_back_keyboard("trivia_menu"))
                 return
             
             question = random.choice(questions)
@@ -920,8 +1141,40 @@ Ready for some fun? Pick an option below! ⬇️{hint_text}
             keyboard.append([InlineKeyboardButton("🔙 Back", callback_data="trivia_menu")])
             
             await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown')
+        
+        elif data.startswith("trivia_answer_"):
+            parts = data.split("_")
+            question_id = "_".join(parts[2:-1])
+            answer_index = int(parts[-1])
+            
+            user_question_key = f'active_question_{user.id}'
+            if user_question_key not in self.group_data[chat_id]:
+                await query.edit_message_text("Question expired!", reply_markup=self.get_back_keyboard("trivia_menu"))
+                return
+            
+            question_data = self.group_data[chat_id][user_question_key]
+            question = question_data['question']
+            
+            chosen_answer = question['options'][answer_index]
+            correct = chosen_answer == question['answer']
+            
+            if correct:
+                self.group_data[chat_id]['trivia_scores'][user.id] += 1
+                result_text = "✅ **Correct!** Well done!"
+                result_text += f"\n\n🏆 **Your Score:** {self.group_data[chat_id]['trivia_scores'][user.id]} points"
+            else:
+                result_text = "❌ **Incorrect!**"
+                result_text += f"\n\n🎯 **Correct Answer:** {question['answer']}"
+            
+            del self.group_data[chat_id][user_question_key]
+            
+            keyboard = [
+                [InlineKeyboardButton("🧠 Again", callback_data="trivia_menu")],
+                [InlineKeyboardButton("🔙 Menu", callback_data="main_menu")]
+            ]
+            
+            await query.edit_message_text(result_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown')
 
-    # Quick implementations of other essential handlers
     async def coin_flip_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Coin flip handler"""
         result = random.choice(['Heads', 'Tails'])
@@ -932,50 +1185,6 @@ Ready for some fun? Pick an option below! ⬇️{hint_text}
         result = random.randint(1, 6)
         dice_emojis = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅']
         await self.suspense_reveal(update.callback_query, f"{dice_emojis[result-1]} **{result}**!", self.get_back_keyboard())
-
-    async def music_menu_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Music menu handler"""
-        query = update.callback_query
-        
-        api_status = "🟢 YouTube API" if self.YOUTUBE_API_KEY else "🟡 Curated"
-        
-        text = f"""🎵 **Music Selector** 🎵
-
-Random music from YouTube's vast library!
-{api_status}
-        """
-        
-        keyboard = [
-            [InlineKeyboardButton("🇷🇺 Russian", callback_data="ytmusic_russian"),
-             InlineKeyboardButton("🇯🇵 Japanese", callback_data="ytmusic_japanese")],
-            [InlineKeyboardButton("🎌 Anime", callback_data="ytmusic_anime"),
-             InlineKeyboardButton("🌍 Global", callback_data="ytmusic_global")],
-            [InlineKeyboardButton("🎲 Surprise!", callback_data="ytmusic_random")],
-            [InlineKeyboardButton("🔙 Back", callback_data="main_menu")]
-        ]
-        
-        await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown')
-
-    async def meme_menu_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Russian meme menu handler"""
-        query = update.callback_query
-        
-        text = """🇷🇺 **Russian Meme Generator** 🇷🇺
-
-Random memes from Russian Reddit communities!
-*Warning: May cause uncontrollable laughter* 😂
-        """
-        
-        keyboard = [
-            [InlineKeyboardButton("🎲 Random", callback_data="meme_random")],
-            [InlineKeyboardButton("🔥 Hot", callback_data="meme_hot"),
-             InlineKeyboardButton("👑 Top", callback_data="meme_top")],
-            [InlineKeyboardButton("🇷🇺 Russia", callback_data="meme_russia"),
-             InlineKeyboardButton("😂 Pikabu", callback_data="meme_pikabu")],
-            [InlineKeyboardButton("🔙 Back", callback_data="main_menu")]
-        ]
-        
-        await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown')
 
     async def trivia_menu_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Enhanced trivia menu"""
@@ -1004,6 +1213,51 @@ Random memes from Russian Reddit communities!
         
         await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown')
 
+    # Add minimal implementations for other required handlers to prevent errors
+    async def vote_menu_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Voting menu placeholder"""
+        await update.callback_query.edit_message_text("🗳️ Voting feature - Coming soon!", reply_markup=self.get_back_keyboard())
+
+    async def vote_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Vote handler placeholder"""
+        pass
+
+    async def roast_menu_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Roast menu placeholder"""
+        await update.callback_query.edit_message_text("😈 Roast feature - Coming soon!", reply_markup=self.get_back_keyboard())
+
+    async def roast_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Roast handler placeholder"""
+        pass
+
+    async def choose_menu_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Choose menu placeholder"""
+        await update.callback_query.edit_message_text("🎯 Choose feature - Coming soon!", reply_markup=self.get_back_keyboard())
+
+    async def choose_option_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Choose option handler placeholder"""
+        pass
+
+    async def split_bill_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Split bill handler placeholder"""
+        pass
+
+    async def games_menu_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Games menu placeholder"""
+        await update.callback_query.edit_message_text("🎪 Games feature - Coming soon!", reply_markup=self.get_back_keyboard())
+
+    async def lottery_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Lottery handler placeholder"""
+        pass
+
+    async def lottery_action_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Lottery action handler placeholder"""
+        pass
+
+    async def roulette_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Roulette handler placeholder"""
+        pass
+
     async def mood_menu_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Mood menu handler"""
         query = update.callback_query
@@ -1024,6 +1278,36 @@ Current: {current_mood.title()} {self.moods[current_mood]['emoji']}
         keyboard.append([InlineKeyboardButton("🔙 Back", callback_data="main_menu")])
         
         await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown')
+
+    async def set_mood_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Set mood handler"""
+        query = update.callback_query
+        chat_id = update.effective_chat.id
+        data = query.data
+        
+        if data.startswith("set_mood_"):
+            mood = data.split("_")[-1]
+            
+            if mood in self.moods:
+                self.group_data[chat_id]['mood'] = mood
+                emoji = self.moods[mood]['emoji']
+                
+                await query.edit_message_text(
+                    f"{emoji} Mood set to {mood.title()}!",
+                    reply_markup=self.get_back_keyboard("mood_menu")
+                )
+
+    async def stats_menu_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Stats menu placeholder"""
+        await update.callback_query.edit_message_text("📊 Stats feature - Coming soon!", reply_markup=self.get_back_keyboard())
+
+    async def karma_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Karma handler placeholder"""
+        pass
+
+    async def history_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """History handler placeholder"""
+        pass
 
     async def suspense_reveal(self, query, final_text, keyboard):
         """Suspenseful reveal animation"""
@@ -1105,9 +1389,10 @@ def main():
         # Local development with polling
         logger.info("🚀 Bot running locally with polling...")
         logger.info("🎵 YouTube API: " + ("✅ Enabled" if YOUTUBE_API_KEY else "❌ Disabled (using fallback)"))
-        logger.info("😂 Russian Memes: ✅ Enabled (Reddit API)")
+        logger.info("😂 Russian Memes: ✅ Enabled (Reddit API - FREE)")
         logger.info("🧠 Trivia Questions: ✅ 150+ Questions")
         logger.info("🍻 Drinking Games: ✅ 100+ Never Have I Ever")
+        logger.info("🎭 Personalities: ✅ 10 Different Moods")
         
         application.run_polling(allowed_updates=Update.ALL_TYPES)
 
