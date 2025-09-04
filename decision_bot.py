@@ -1214,78 +1214,77 @@ Random music from YouTube's vast library!
         await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown')
 
     # Add minimal implementations for other required handlers to prevent errors
-  async def vote_menu_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Enhanced voting menu"""
-    query = update.callback_query
-    chat_id = update.effective_chat.id
-    
-    active_votes = self.group_data[chat_id].get('active_votes', {})
-    active_text = f"\n🗳️ Active polls: {len(active_votes)}" if active_votes else ""
-    
-    text = f"""🗳️ **Group Voting System** 🗳️
+    async def vote_menu_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Enhanced voting menu"""
+        query = update.callback_query
+        chat_id = update.effective_chat.id
+        
+        active_votes = self.group_data[chat_id].get('active_votes', {})
+        active_text = f"\n🗳️ Active polls: {len(active_votes)}" if active_votes else ""
+        
+        text = f"""🗳️ **Group Voting System** 🗳️
 
 Let democracy decide your fate!{active_text}
-    """
-    
-    keyboard = [
-        [
-            InlineKeyboardButton("🍕 Food Vote", callback_data="vote_food"),
-            InlineKeyboardButton("🍻 Bar Vote", callback_data="vote_bar")
-        ],
-        [
-            InlineKeyboardButton("🎮 Activity Vote", callback_data="vote_activity"),
-            InlineKeyboardButton("🎲 Random Topic", callback_data="vote_random")
-        ],
-        [
-            InlineKeyboardButton("📊 Results", callback_data="vote_results"),
-            InlineKeyboardButton("🗑️ Clear Votes", callback_data="vote_clear")
-        ],
-        [
-            InlineKeyboardButton("🔙 Back", callback_data="main_menu")
+        """
+        
+        keyboard = [
+            [
+                InlineKeyboardButton("🍕 Food Vote", callback_data="vote_food"),
+                InlineKeyboardButton("🍻 Bar Vote", callback_data="vote_bar")
+            ],
+            [
+                InlineKeyboardButton("🎮 Activity Vote", callback_data="vote_activity"),
+                InlineKeyboardButton("🎲 Random Topic", callback_data="vote_random")
+            ],
+            [
+                InlineKeyboardButton("📊 Results", callback_data="vote_results"),
+                InlineKeyboardButton("🗑️ Clear Votes", callback_data="vote_clear")
+            ],
+            [
+                InlineKeyboardButton("🔙 Back", callback_data="main_menu")
+            ]
         ]
-    ]
+        
+        await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown')
     
-    await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown')
-
     async def vote_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Handle voting actions"""
-    query = update.callback_query
-    chat_id = update.effective_chat.id
-    user = update.effective_user
-    data = query.data
-    
-    if data == "vote_food":
-        options = ["🍕 Pizza", "🍔 Burgers", "🍜 Ramen", "🥘 Russian Food", "🍱 Sushi"]
-        await self.create_vote(query, "What should we eat?", options, "food")
+        """Handle voting actions"""
+        query = update.callback_query
+        chat_id = update.effective_chat.id
+        user = update.effective_user
+        data = query.data
         
-    elif data == "vote_bar":
-        options = ["🍺 Local Pub", "🍶 Sake Bar", "🍸 Cocktail Lounge", "🏠 Someone's Place", "🌃 Bar Crawl"]
-        await self.create_vote(query, "Where should we drink?", options, "bar")
-        
-    elif data == "vote_activity":
-        options = ["🎮 Gaming Night", "🎬 Movie Night", "🎤 Karaoke", "🎲 Board Games", "🚶 Walk Around"]
-        await self.create_vote(query, "What should we do?", options, "activity")
-        
-    elif data == "vote_random":
-        topics = [
-            ("Best anime character", ["🥷 Naruto", "⚡ Pikachu", "🗾 Goku", "🌸 Sailor Moon"]),
-            ("Worst Russian stereotype", ["🐻 Bears everywhere", "🍺 Always drunk", "❄️ Always cold", "🪆 Love matryoshkas"]),
-            ("Best superpower", ["🦸 Flying", "👤 Invisibility", "🧠 Mind reading", "⚡ Super speed"]),
-            ("Zombie apocalypse weapon", ["🏏 Baseball bat", "🔫 Shotgun", "🗾 Katana", "🥄 Spoon"])
-        ]
-        topic, options = random.choice(topics)
-        await self.create_vote(query, topic, options, "random")
-        
-    elif data.startswith("vote_option_"):
-        await self.handle_vote_option(query, user, data)
-        
-    elif data == "vote_results":
-        await self.show_vote_results(query, chat_id)
-        
-    elif data == "vote_clear":
-        self.group_data[chat_id]['active_votes'] = {}
-        await query.edit_message_text("🗑️ All votes cleared!", reply_markup=self.get_back_keyboard("vote_menu"))
-
+        if data == "vote_food":
+            options = ["🍕 Pizza", "🍔 Burgers", "🍜 Ramen", "🥘 Russian Food", "🍱 Sushi"]
+            await self.create_vote(query, "What should we eat?", options, "food")
+            
+        elif data == "vote_bar":
+            options = ["🍺 Local Pub", "🍶 Sake Bar", "🍸 Cocktail Lounge", "🏠 Someone's Place", "🌃 Bar Crawl"]
+            await self.create_vote(query, "Where should we drink?", options, "bar")
+            
+        elif data == "vote_activity":
+            options = ["🎮 Gaming Night", "🎬 Movie Night", "🎤 Karaoke", "🎲 Board Games", "🚶 Walk Around"]
+            await self.create_vote(query, "What should we do?", options, "activity")
+            
+        elif data == "vote_random":
+            topics = [
+                ("Best anime character", ["🥷 Naruto", "⚡ Pikachu", "🗾 Goku", "🌸 Sailor Moon"]),
+                ("Worst Russian stereotype", ["🐻 Bears everywhere", "🍺 Always drunk", "❄️ Always cold", "🪆 Love matryoshkas"]),
+                ("Best superpower", ["🦸 Flying", "👤 Invisibility", "🧠 Mind reading", "⚡ Super speed"]),
+                ("Zombie apocalypse weapon", ["🏏 Baseball bat", "🔫 Shotgun", "🗾 Katana", "🥄 Spoon"])
+            ]
+            topic, options = random.choice(topics)
+            await self.create_vote(query, topic, options, "random")
+            
+        elif data.startswith("vote_option_"):
+            await self.handle_vote_option(query, user, data)
+            
+        elif data == "vote_results":
+            await self.show_vote_results(query, chat_id)
+            
+        elif data == "vote_clear":
+            self.group_data[chat_id]['active_votes'] = {}
+            await query.edit_message_text("🗑️ All votes cleared!", reply_markup=self.get_back_keyboard("vote_menu"))
     async def roast_menu_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Roast menu placeholder"""
         await update.callback_query.edit_message_text("😈 Roast feature - Coming soon!", reply_markup=self.get_back_keyboard())
