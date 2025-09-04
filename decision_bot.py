@@ -441,17 +441,13 @@ class DecisionBot:
         
         mood_emoji = self.moods[self.group_data[chat_id]['mood']]['emoji']
         
-        welcome_text = f"""{mood_emoji} **Ultimate Decision Bot** {mood_emoji}
+        welcome_text = f"""{mood_emoji} **CrewCaptain** {mood_emoji}
 
-Welcome! Your complete entertainment companion!
+Decision maker, entertainment provider, occasional chaos agent.
 
-🆕 **All Features:**
-• 🗳️ Voting System • 🧠 150+ Trivia Questions
-• 🎵 YouTube Music • 😂 Russian Memes  
-• 🍻 100+ Drinking Games • 😈 Roast Mode
-• 🚀 Space Adventures • 🎌 10 Personalities
+I've got voting, trivia, music discovery, memes, roasts, and interactive stories. Currently in [mood] mode but I cycle through different personalities.
 
-Ready for some fun? Pick an option below! ⬇️{hint_text}
+Let's do something ⬇️{hint_text}
         """
         
         keyboard = self.get_main_menu_keyboard(chat_id)
