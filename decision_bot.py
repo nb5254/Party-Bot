@@ -445,7 +445,8 @@ class DecisionBot:
 
 Decision maker, entertainment provider, occasional chaos agent.
 
-I've got voting, trivia, music discovery, memes, roasts, and interactive stories. Currently in [mood] mode but I cycle through different personalities.
+I've got voting, trivia, music discovery, memes, roasts, and interactive stories. Multiple personalities available on request.
+
 
 Let's do something ⬇️{hint_text}
         """
