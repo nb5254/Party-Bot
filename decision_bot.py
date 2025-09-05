@@ -17,7 +17,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-class DecisionBot:
+class CrewCaptain:
     def __init__(self):
         # Store group data (in production, use a proper database)
         self.group_data = defaultdict(lambda: {
@@ -44,7 +44,9 @@ class DecisionBot:
                 'story_choices': [],
                 'active_game': False,
                 'game_stats': defaultdict(int)
-            }
+            },
+            'last_passive_response': datetime.now() - timedelta(minutes=5),  # Allow immediate first response
+            'passive_triggers_enabled': True
         })
         
         # YouTube API configuration
@@ -60,11 +62,86 @@ class DecisionBot:
             'random': ['music', 'song', 'musical', 'melody', 'banda', 'chanson']
         }
         
-        # Russian meme subreddits - FIXED LIST
+        # Russian meme subreddits
         self.russian_meme_subreddits = [
             'pikabu', 'ANormalDayInRussia', 'russia', 'russianmemes', 
             'MemesRU', 'slavs_squatting'
         ]
+        
+        # COMPREHENSIVE PASSIVE TRIGGERS WITH FUZZY MATCHING
+        self.passive_triggers = {
+            'summoning': [
+                "hey bot", "crew captain", "decision bot", "help us", "bot time",
+                "captain help", "need the bot", "summon bot", "bot assistance",
+                "call the captain", "hey captain", "yo bot", "bot please",
+                "decision time", "need help here", "bot magic", "artificial intelligence",
+                "robot help", "digital assistant", "ai time"
+            ],
+            'decision_making': [
+                "can't decide", "i don't know", "what should we", "can't make up my mind", 
+                "you guys decide", "i'm indecisive", "someone choose", "what do you think",
+                "help us decide", "tough choice", "hard decision", "stuck between",
+                "no idea what", "need help choosing", "what would you", "any suggestions"
+            ],
+            'payment': [
+                "who's paying", "who pays", "who's buying", "who's got this", 
+                "someone needs to pay", "bill time", "check please", "who's turn",
+                "i paid last time", "not it", "whose turn", "split the bill",
+                "who owes what", "payment time", "money time", "tab time"
+            ],
+            'voting': [
+                "vote on it", "let's vote", "poll time", "what does everyone think",
+                "show of hands", "majority rules", "democratic decision", "consensus",
+                "let's poll", "group decision", "what's the verdict", "democracy time",
+                "group vote", "collective choice"
+            ],
+            'food_location': [
+                "where should we eat", "what restaurant", "food suggestions", "i'm hungry",
+                "where to next", "next bar", "change venues", "somewhere else",
+                "restaurant recommendation", "food options", "dining choices", "meal time",
+                "hungry", "food time", "dinner plans", "lunch ideas", "breakfast spot"
+            ],
+            'entertainment': [
+                "i'm bored", "what now", "nothing to do", "entertain us",
+                "this is boring", "need entertainment", "so bored", "kill time",
+                "what's next", "activity time", "fun time", "something fun",
+                "excitement needed", "mix things up", "shake things up"
+            ],
+            'gaming': [
+                "game time", "let's play something", "party game", "group activity",
+                "play a game", "gaming session", "fun game", "something interactive",
+                "group game", "multiplayer", "team game", "competitive game"
+            ],
+            'drinking_games': [
+                "drinking game", "never have i ever", "party drinking", "booze game",
+                "alcohol game", "sip game", "drink challenge", "bar game",
+                "liquid courage", "shot game", "tipsy game", "social drinking"
+            ],
+            'music': [
+                "music suggestions", "play something", "what song", "dj recommendations",
+                "soundtrack needed", "music time", "tune time", "play music",
+                "good music", "song recommendation", "musical vibes", "sound track"
+            ],
+            'trivia': [
+                "trivia time", "quiz us", "test our knowledge", "brain challenge",
+                "smart person question", "trivia question", "quiz time", "knowledge test",
+                "brain game", "iq test", "facts time", "learning time"
+            ],
+            'memes': [
+                "meme time", "funny picture", "need laughs", "show us memes",
+                "russian memes", "funny stuff", "comedy time", "laugh time",
+                "humor needed", "something funny"
+            ],
+            'space_adventure': [
+                "space adventure", "story time", "interactive story", "cowboy bebop",
+                "space mission", "adventure game", "crew mission", "story game", "space cowboys"
+            ],
+            'roast': [
+                "roast someone", "roast me", "insult time", "burn someone",
+                "compliment time", "say something nice", "wholesome time",
+                "friendly fire", "trash talk", "verbal sparring"
+            ]
+        }
         
         # Enhanced mood system
         self.moods = {
@@ -195,6 +272,11 @@ class DecisionBot:
             {"question": "What does 'Спасибо' mean in English?", "options": ["Hello", "Goodbye", "Thank you", "Please"], "answer": "Thank you", "category": "Russian"},
             {"question": "Which Russian dance is famous worldwide?", "options": ["Waltz", "Kazachok", "Tango", "Flamenco"], "answer": "Kazachok", "category": "Russian"},
             {"question": "What's Russia's national animal?", "options": ["Wolf", "Eagle", "Bear", "Tiger"], "answer": "Bear", "category": "Russian"},
+            {"question": "What's the currency of Russia?", "options": ["Ruble", "Euro", "Dollar", "Yen"], "answer": "Ruble", "category": "Russian"},
+            {"question": "Which Russian city was the capital before Moscow?", "options": ["St. Petersburg", "Novgorod", "Kiev", "Kazan"], "answer": "St. Petersburg", "category": "Russian"},
+            {"question": "What's the famous Russian ballet company?", "options": ["Bolshoi", "Mariinsky", "Kremlin", "Hermitage"], "answer": "Bolshoi", "category": "Russian"},
+            {"question": "Which Russian composer wrote '1812 Overture'?", "options": ["Tchaikovsky", "Stravinsky", "Rachmaninoff", "Rimsky-Korsakov"], "answer": "Tchaikovsky", "category": "Russian"},
+            {"question": "What's the traditional Russian alcoholic drink?", "options": ["Vodka", "Beer", "Wine", "Whiskey"], "answer": "Vodka", "category": "Russian"},
             
             # JAPANESE CULTURE (50 questions)
             {"question": "What's the traditional Japanese garment called?", "options": ["Hanbok", "Kimono", "Cheongsam", "Sari"], "answer": "Kimono", "category": "Japanese"},
@@ -202,13 +284,30 @@ class DecisionBot:
             {"question": "What does 'Arigatou' mean?", "options": ["Hello", "Thank you", "Goodbye", "Sorry"], "answer": "Thank you", "category": "Japanese"},
             {"question": "What's the Japanese art of paper folding?", "options": ["Ikebana", "Origami", "Bonsai", "Kendo"], "answer": "Origami", "category": "Japanese"},
             {"question": "Which mountain is sacred in Japan?", "options": ["Mount Fuji", "Mount Aso", "Mount Tateyama", "Mount Hotaka"], "answer": "Mount Fuji", "category": "Japanese"},
+            {"question": "What's the Japanese currency?", "options": ["Yen", "Won", "Yuan", "Dong"], "answer": "Yen", "category": "Japanese"},
+            {"question": "What's the Japanese tea ceremony called?", "options": ["Chanoyu", "Ikebana", "Kabuki", "Noh"], "answer": "Chanoyu", "category": "Japanese"},
+            {"question": "Which Japanese martial art uses bamboo swords?", "options": ["Kendo", "Karate", "Judo", "Aikido"], "answer": "Kendo", "category": "Japanese"},
+            {"question": "What's the traditional Japanese room divider?", "options": ["Shoji", "Tatami", "Zabuton", "Futon"], "answer": "Shoji", "category": "Japanese"},
+            {"question": "What does 'Konnichiwa' mean?", "options": ["Hello", "Goodbye", "Thank you", "Sorry"], "answer": "Hello", "category": "Japanese"},
             
             # POP CULTURE (50+ questions)
             {"question": "Who directed the movie 'Spirited Away'?", "options": ["Hayao Miyazaki", "Makoto Shinkai", "Satoshi Kon", "Mamoru Hosoda"], "answer": "Hayao Miyazaki", "category": "Pop Culture"},
             {"question": "What's the highest grossing anime movie?", "options": ["Your Name", "Demon Slayer", "Spirited Away", "Princess Mononoke"], "answer": "Demon Slayer", "category": "Pop Culture"},
             {"question": "In what game do you 'catch 'em all'?", "options": ["Digimon", "Pokemon", "Yu-Gi-Oh", "Monster Hunter"], "answer": "Pokemon", "category": "Pop Culture"},
             {"question": "Which studio made 'Attack on Titan'?", "options": ["Mappa", "Pierrot", "Madhouse", "Bones"], "answer": "Mappa", "category": "Pop Culture"},
-            {"question": "Which anime character is known for saying 'Believe it!'?", "options": ["Goku", "Naruto", "Luffy", "Ichigo"], "answer": "Naruto", "category": "Pop Culture"}
+            {"question": "Which anime character is known for saying 'Believe it!'?", "options": ["Goku", "Naruto", "Luffy", "Ichigo"], "answer": "Naruto", "category": "Pop Culture"},
+            {"question": "What's the main character's name in 'One Piece'?", "options": ["Luffy", "Zoro", "Sanji", "Nami"], "answer": "Luffy", "category": "Pop Culture"},
+            {"question": "Which movie won the Academy Award for Best Picture in 2020?", "options": ["Parasite", "1917", "Joker", "Once Upon a Time"], "answer": "Parasite", "category": "Pop Culture"},
+            {"question": "What's the most subscribed YouTube channel?", "options": ["T-Series", "PewDiePie", "MrBeast", "SET India"], "answer": "T-Series", "category": "Pop Culture"},
+            {"question": "Which social media platform is known for short videos?", "options": ["TikTok", "Instagram", "Twitter", "Facebook"], "answer": "TikTok", "category": "Pop Culture"},
+            {"question": "What does 'OP' mean in gaming?", "options": ["Overpowered", "Original Poster", "Open Play", "Over Powered"], "answer": "Overpowered", "category": "Pop Culture"},
+            
+            # Additional random questions
+            {"question": "What's the capital of Australia?", "options": ["Sydney", "Melbourne", "Canberra", "Perth"], "answer": "Canberra", "category": "General"},
+            {"question": "Which planet is closest to the Sun?", "options": ["Venus", "Mercury", "Earth", "Mars"], "answer": "Mercury", "category": "General"},
+            {"question": "What's the largest ocean on Earth?", "options": ["Atlantic", "Indian", "Arctic", "Pacific"], "answer": "Pacific", "category": "General"},
+            {"question": "How many continents are there?", "options": ["5", "6", "7", "8"], "answer": "7", "category": "General"},
+            {"question": "What's the chemical symbol for gold?", "options": ["Go", "Gd", "Au", "Ag"], "answer": "Au", "category": "General"}
         ]
 
         # EXPANDED NEVER HAVE I EVER QUESTIONS
@@ -248,7 +347,21 @@ class DecisionBot:
             "Never have I ever binged an entire series in one day",
             "Never have I ever met someone famous",
             "Never have I ever been on a sports team",
-            "Never have I ever ghosted someone"
+            "Never have I ever ghosted someone",
+            "Never have I ever sent a text to the wrong person",
+            "Never have I ever cried during a movie",
+            "Never have I ever stolen something from a hotel",
+            "Never have I ever pretended to like a gift I hated",
+            "Never have I ever googled myself",
+            "Never have I ever fallen asleep during a movie in theaters",
+            "Never have I ever had a crush on a teacher",
+            "Never have I ever eaten food that fell on the floor",
+            "Never have I ever been in a fight",
+            "Never have I ever cheated on a test",
+            "Never have I ever had surgery",
+            "Never have I ever been stung by a bee",
+            "Never have I ever ridden in a helicopter",
+            "Never have I ever been arrested"
         ]
 
         # SPACE ADVENTURE STORY DATA
@@ -381,6 +494,239 @@ class DecisionBot:
             "🌸 Something beautiful happens when you say the magic sakura word..."
         ]
 
+    # FUZZY MATCHING SYSTEM
+    def fuzzy_match(self, trigger_phrase, message_text):
+        """Check if trigger phrase matches message with fuzzy logic"""
+        message_lower = message_text.lower()
+        trigger_lower = trigger_phrase.lower()
+        
+        # Simple substring matching for better natural conversation detection
+        if len(trigger_lower.split()) == 1:
+            # Single word - check word boundaries to avoid partial matches
+            pattern = r'\b' + re.escape(trigger_lower) + r'\b'
+            return bool(re.search(pattern, message_lower))
+        else:
+            # Multi-word phrase - check if most words are present
+            trigger_words = set(trigger_lower.split())
+            message_words = set(message_lower.split())
+            
+            # Allow some flexibility - require at least 70% of words to match
+            matches = len(trigger_words.intersection(message_words))
+            required_matches = max(1, int(len(trigger_words) * 0.7))
+            return matches >= required_matches
+
+    # PASSIVE LISTENING SYSTEM
+    async def check_passive_triggers(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Check for passive triggers in messages with 10-second cooldown"""
+        if not update.message or not update.message.text:
+            return False
+            
+        chat_id = update.effective_chat.id
+        text = update.message.text.strip()
+        
+        # Check if passive triggers are enabled for this group
+        if not self.group_data[chat_id]['passive_triggers_enabled']:
+            return False
+        
+        # Cooldown check (10 seconds between passive responses)
+        now = datetime.now()
+        last_response = self.group_data[chat_id]['last_passive_response']
+        if (now - last_response).total_seconds() < 10:
+            return False
+        
+        # Check each trigger category
+        for category, triggers in self.passive_triggers.items():
+            for trigger in triggers:
+                if self.fuzzy_match(trigger, text):
+                    self.group_data[chat_id]['last_passive_response'] = now
+                    await self.handle_passive_trigger(update, context, category, trigger)
+                    return True
+        
+        return False
+
+    async def handle_passive_trigger(self, update: Update, context: ContextTypes.DEFAULT_TYPE, category: str, trigger: str):
+        """Handle specific passive trigger categories"""
+        chat_id = update.effective_chat.id
+        mood = self.group_data[chat_id]['mood']
+        mood_emoji = self.moods[mood]['emoji']
+        
+        if category == 'summoning':
+            await update.message.reply_text(
+                f"{mood_emoji} **CrewCaptain** at your service!\n\nWhat can I help you decide today?",
+                reply_markup=self.get_main_menu_keyboard(chat_id),
+                parse_mode='Markdown'
+            )
+            
+        elif category == 'decision_making':
+            options = ['🍕 Pizza', '🍔 Burgers', '🍜 Ramen', '🍱 Sushi', '🌮 Tacos', '🥘 Russian Food']
+            chosen = random.choice(options)
+            
+            mood_responses = {
+                'pirate': f"🏴‍☠️ Arrr! I sense indecision! The treasure map points to: **{chosen}**",
+                'sarcastic': f"😏 Oh wow, *another* difficult decision... Obviously **{chosen}**!",
+                'anime': f"🎌 Senpai seems confused! Anime magic chooses: **{chosen}**!",
+                'cyberpunk': f"🌃 Neural networks detected uncertainty... Computing: **{chosen}**"
+            }
+            
+            response = mood_responses.get(mood, f"🎯 Heard you need help deciding!\n\nI choose: **{chosen}**")
+            
+            await update.message.reply_text(
+                f"{response}\n\nNeed more options?",
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("🎯 More Choices", callback_data="choose_menu")],
+                    [InlineKeyboardButton("🎲 Full Menu", callback_data="main_menu")]
+                ]),
+                parse_mode='Markdown'
+            )
+            
+        elif category == 'payment':
+            await self.passive_who_pays(update, context)
+            
+        elif category == 'voting':
+            await update.message.reply_text(
+                "🗳️ Democracy detected! Time to vote!\n\nWhat should we vote on?",
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("🍕 Food Vote", callback_data="vote_food"),
+                     InlineKeyboardButton("🍻 Bar Vote", callback_data="vote_bar")],
+                    [InlineKeyboardButton("🎮 Activity Vote", callback_data="vote_activity"),
+                     InlineKeyboardButton("🎲 Random Topic", callback_data="vote_random")]
+                ])
+            )
+            
+        elif category == 'food_location':
+            locations = ['🍕 Local Pizza Place', '🍔 Burger Joint', '🍜 Ramen Shop', 
+                        '🍱 Sushi Bar', '🥘 Russian Restaurant', '🌮 Taco Place']
+            chosen = random.choice(locations)
+            
+            await update.message.reply_text(
+                f"🍽️ Food radar activated!\n\nRecommendation: **{chosen}**\n\nNeed more food options?",
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("🍕 Food Choices", callback_data="choose_food")],
+                    [InlineKeyboardButton("🗳️ Food Vote", callback_data="vote_food")]
+                ]),
+                parse_mode='Markdown'
+            )
+            
+        elif category == 'entertainment':
+            activities = ['🎮 Gaming Session', '🎬 Movie Night', '🎤 Karaoke', 
+                         '🎲 Board Games', '🚶 Walk Around', '🎯 Something Random']
+            chosen = random.choice(activities)
+            
+            await update.message.reply_text(
+                f"😴 Boredom detected!\n\nSuggestion: **{chosen}**\n\nMore entertainment?",
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("🎮 Activities", callback_data="choose_activities")],
+                    [InlineKeyboardButton("🚀 Space Adventure", callback_data="space_menu")]
+                ]),
+                parse_mode='Markdown'
+            )
+            
+        elif category == 'gaming':
+            await update.message.reply_text(
+                "🎮 Game time activated!\n\nWhat kind of gaming session?",
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("🚀 Space Adventure", callback_data="space_menu")],
+                    [InlineKeyboardButton("🧠 Trivia Battle", callback_data="trivia_menu")],
+                    [InlineKeyboardButton("🎲 Quick Games", callback_data="games_menu")]
+                ])
+            )
+            
+        elif category == 'drinking_games':
+            await update.message.reply_text(
+                "🍻 Drinking games detected!\n\n*Remember: Drink responsibly!*\n\nWhat's your poison?",
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("🎲 Never Have I Ever", callback_data="drink_never")],
+                    [InlineKeyboardButton("🍻 All Drinking Games", callback_data="drinking_menu")]
+                ])
+            )
+            
+        elif category == 'music':
+            await update.message.reply_text(
+                "🎵 Music mode activated!\n\nWhat genre speaks to your soul?",
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("🇷🇺 Russian", callback_data="ytmusic_russian"),
+                     InlineKeyboardButton("🇯🇵 Japanese", callback_data="ytmusic_japanese")],
+                    [InlineKeyboardButton("🎌 Anime", callback_data="ytmusic_anime"),
+                     InlineKeyboardButton("🎲 Surprise", callback_data="ytmusic_random")]
+                ])
+            )
+            
+        elif category == 'trivia':
+            await update.message.reply_text(
+                "🧠 Brain challenge activated!\n\nTest your knowledge across cultures!",
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("🇷🇺 Russian Trivia", callback_data="trivia_start_russian")],
+                    [InlineKeyboardButton("🇯🇵 Japanese Trivia", callback_data="trivia_start_japanese")],
+                    [InlineKeyboardButton("🎲 Random Trivia", callback_data="trivia_start_random")]
+                ])
+            )
+            
+        elif category == 'memes':
+            await update.message.reply_text(
+                "😂 Meme generator activated!\n\nPrepare for Russian internet gold!",
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("🎲 Random Meme", callback_data="meme_random")],
+                    [InlineKeyboardButton("🇷🇺 All Memes", callback_data="meme_menu")]
+                ])
+            )
+            
+        elif category == 'space_adventure':
+            await update.message.reply_text(
+                "🚀 Space adventure protocols engaged!\n\nReady to explore the galaxy, space cowboy?",
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("🆕 New Adventure", callback_data="space_start")],
+                    [InlineKeyboardButton("🚀 Space Menu", callback_data="space_menu")]
+                ])
+            )
+            
+        elif category == 'roast':
+            await update.message.reply_text(
+                f"😈 Roast mode activated! {mood_emoji}\n\nTime for some friendly fire!",
+                reply_markup=InlineKeyboardMarkup([
+                    [InlineKeyboardButton("🎯 Roast Someone", callback_data="roast_random")],
+                    [InlineKeyboardButton("💖 Compliment Instead", callback_data="roast_compliment")],
+                    [InlineKeyboardButton("😈 All Roasts", callback_data="roast_menu")]
+                ])
+            )
+
+    async def passive_who_pays(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle passive payment triggers"""
+        chat_id = update.effective_chat.id
+        
+        members = await self.get_group_members(context, chat_id)
+        if len(members) < 2:
+            await update.message.reply_text(
+                "💸 Payment radar activated!\n\n❌ Need at least 2 people to decide who pays!",
+                reply_markup=self.get_main_menu_keyboard(chat_id)
+            )
+            return
+        
+        chosen = random.choice(members)
+        self.group_data[chat_id]['karma'][chosen.id] += 1
+        
+        display_name = self.group_data[chat_id]['nicknames'].get(chosen.id, chosen.first_name)
+        mood = self.group_data[chat_id]['mood']
+        message = random.choice(self.moods[mood]['messages'])
+        
+        mood_responses = {
+            'pirate': f"🏴‍☠️ Arrr! The treasure goes to... **{display_name}** pays the doubloons!",
+            'sarcastic': f"😏 Oh what a *shocking* surprise... **{display_name}** gets the honor!",
+            'anime': f"⚡ Payment jutsu activated! **{display_name}** has been chosen by anime magic!",
+            'cyberpunk': f"🌃 Payment algorithms computed... **{display_name}** credit chip selected!",
+            'pokemon': f"⚡ Wild payment appeared! **{display_name}** used Pay Bill! It's super effective!"
+        }
+        
+        response = mood_responses.get(mood, f"💸 {message}\n\n**{display_name}** pays!")
+        
+        await update.message.reply_text(
+            response,
+            reply_markup=InlineKeyboardMarkup([
+                [InlineKeyboardButton("🎲 Choose Again", callback_data="who_pays")],
+                [InlineKeyboardButton("📊 Payment Stats", callback_data="stats_menu")]
+            ]),
+            parse_mode='Markdown'
+        )
+
     def get_main_menu_keyboard(self, chat_id):
         """Enhanced main menu with all features"""
         mood_emoji = self.moods[self.group_data[chat_id]['mood']]['emoji']
@@ -447,6 +793,7 @@ Decision maker, entertainment provider, occasional chaos agent.
 
 I've got voting, trivia, music discovery, memes, roasts, and interactive stories. Multiple personalities available on request.
 
+🎧 **Now with passive listening!** I'll respond naturally to conversation cues like "who's paying?" or "I'm bored."
 
 Let's do something ⬇️{hint_text}
         """
@@ -542,7 +889,7 @@ Let's do something ⬇️{hint_text}
                 
                 # Simple API call
                 api_url = f"https://www.reddit.com/r/{subreddit}/hot.json?limit=25"
-                headers = {'User-Agent': 'DecisionBot/1.0'}
+                headers = {'User-Agent': 'CrewCaptain/1.0'}
                 
                 async with aiohttp.ClientSession() as session:
                     async with session.get(api_url, headers=headers, timeout=10) as response:
@@ -678,7 +1025,7 @@ Let's do something ⬇️{hint_text}
             "choose_menu": self.choose_menu_handler,
             "vote_menu": self.vote_menu_handler,
             "roast_menu": self.roast_menu_handler,
-            "space_menu": self.space_menu_handler,  # NEW: Space Adventure
+            "space_menu": self.space_menu_handler,
             "games_menu": self.games_menu_handler,
             "stats_menu": self.stats_menu_handler
         }
@@ -705,7 +1052,7 @@ Let's do something ⬇️{hint_text}
             await self.set_mood_handler(update, context)
         elif data.startswith("choose_") and not data.startswith("choose_menu"):
             await self.choose_option_handler(update, context)
-        elif data.startswith("space_"):  # NEW: Space Adventure handlers
+        elif data.startswith("space_"):
             await self.space_handler(update, context)
         else:
             logger.warning(f"Unhandled callback: {data}")
@@ -1153,7 +1500,7 @@ Can't decide? Let me choose for you!
             
             await self.suspense_reveal(query, response, InlineKeyboardMarkup(keyboard))
 
-    # SPACE ADVENTURE GAME - NEW FEATURE
+    # SPACE ADVENTURE GAME - Complete implementation
     async def space_menu_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Space Adventure main menu"""
         query = update.callback_query
@@ -1544,8 +1891,30 @@ Join your friends as space bounty hunters in episodic adventures across the gala
         
         await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown')
 
-    # REMAINING FEATURE HANDLERS (keeping existing implementations)
-    
+    # MUSIC HANDLERS
+    async def music_menu_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Music menu handler"""
+        query = update.callback_query
+        
+        api_status = "🟢 YouTube API" if self.YOUTUBE_API_KEY else "🟡 Curated Songs"
+        
+        text = f"""🎵 **Music Selector** 🎵
+
+Random music from YouTube's vast library!
+{api_status}
+        """
+        
+        keyboard = [
+            [InlineKeyboardButton("🇷🇺 Russian", callback_data="ytmusic_russian"),
+             InlineKeyboardButton("🇯🇵 Japanese", callback_data="ytmusic_japanese")],
+            [InlineKeyboardButton("🎌 Anime", callback_data="ytmusic_anime"),
+             InlineKeyboardButton("🌍 Global", callback_data="ytmusic_global")],
+            [InlineKeyboardButton("🎲 Surprise!", callback_data="ytmusic_random")],
+            [InlineKeyboardButton("🔙 Back", callback_data="main_menu")]
+        ]
+        
+        await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown')
+
     async def youtube_music_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """YouTube music handler"""
         query = update.callback_query
@@ -1571,30 +1940,7 @@ Join your friends as space bounty hunters in episodic adventures across the gala
         
         await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown')
 
-    async def music_menu_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Music menu handler"""
-        query = update.callback_query
-        
-        api_status = "🟢 YouTube API" if self.YOUTUBE_API_KEY else "🟡 Curated Songs"
-        
-        text = f"""🎵 **Music Selector** 🎵
-
-Random music from YouTube's vast library!
-{api_status}
-        """
-        
-        keyboard = [
-            [InlineKeyboardButton("🇷🇺 Russian", callback_data="ytmusic_russian"),
-             InlineKeyboardButton("🇯🇵 Japanese", callback_data="ytmusic_japanese")],
-            [InlineKeyboardButton("🎌 Anime", callback_data="ytmusic_anime"),
-             InlineKeyboardButton("🌍 Global", callback_data="ytmusic_global")],
-            [InlineKeyboardButton("🎲 Surprise!", callback_data="ytmusic_random")],
-            [InlineKeyboardButton("🔙 Back", callback_data="main_menu")]
-        ]
-        
-        await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown')
-
-    # ENHANCED MEME HANDLERS
+    # MEME HANDLERS
     async def meme_menu_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Russian meme menu handler"""
         query = update.callback_query
@@ -1632,7 +1978,7 @@ Fresh memes from Russian Reddit communities!
         await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown')
 
     async def russian_meme_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """FIXED: Russian meme handler with better debugging"""
+        """Russian meme handler with better debugging"""
         query = update.callback_query
         chat_id = update.effective_chat.id
         data = query.data
@@ -1786,7 +2132,7 @@ Fresh memes from Russian Reddit communities!
         keyboard = self.get_back_keyboard("meme_menu")
         await query.edit_message_text(text, reply_markup=keyboard, parse_mode='Markdown')
 
-    # ENHANCED DRINKING GAMES WITH 100+ QUESTIONS
+    # DRINKING GAME HANDLERS
     async def drinking_menu_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Enhanced drinking games menu"""
         query = update.callback_query
@@ -1919,7 +2265,34 @@ Fresh memes from Russian Reddit communities!
         keyboard = self.get_back_keyboard("drinking_menu")
         await query.edit_message_text(text, reply_markup=keyboard, parse_mode='Markdown')
 
-    # ENHANCED TRIVIA WITH 150+ QUESTIONS
+    # TRIVIA HANDLERS
+    async def trivia_menu_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Enhanced trivia menu"""
+        query = update.callback_query
+        chat_id = update.effective_chat.id
+        
+        scores = self.group_data[chat_id]['trivia_scores']
+        top_text = ""
+        if scores:
+            top_scorer = max(scores.items(), key=lambda x: x[1])
+            top_name = self.group_data[chat_id]['nicknames'].get(top_scorer[0], f"User {top_scorer[0]}")
+            top_text = f"\n🏆 Champion: {top_name} ({top_scorer[1]} pts)"
+        
+        text = f"""🧠 **Trivia Quiz** 🧠
+
+150+ questions across cultures!{top_text}
+        """
+        
+        keyboard = [
+            [InlineKeyboardButton("🇷🇺 Russian", callback_data="trivia_start_russian"),
+             InlineKeyboardButton("🇯🇵 Japanese", callback_data="trivia_start_japanese")],
+            [InlineKeyboardButton("🎌 Pop Culture", callback_data="trivia_start_pop"),
+             InlineKeyboardButton("🎲 Random", callback_data="trivia_start_random")],
+            [InlineKeyboardButton("🔙 Back", callback_data="main_menu")]
+        ]
+        
+        await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown')
+
     async def trivia_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Enhanced trivia with 150+ questions"""
         query = update.callback_query
@@ -1990,44 +2363,7 @@ Fresh memes from Russian Reddit communities!
             
             await query.edit_message_text(result_text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown')
 
-    async def trivia_menu_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Enhanced trivia menu"""
-        query = update.callback_query
-        chat_id = update.effective_chat.id
-        
-        scores = self.group_data[chat_id]['trivia_scores']
-        top_text = ""
-        if scores:
-            top_scorer = max(scores.items(), key=lambda x: x[1])
-            top_name = self.group_data[chat_id]['nicknames'].get(top_scorer[0], f"User {top_scorer[0]}")
-            top_text = f"\n🏆 Champion: {top_name} ({top_scorer[1]} pts)"
-        
-        text = f"""🧠 **Trivia Quiz** 🧠
-
-150+ questions across cultures!{top_text}
-        """
-        
-        keyboard = [
-            [InlineKeyboardButton("🇷🇺 Russian", callback_data="trivia_start_russian"),
-             InlineKeyboardButton("🇯🇵 Japanese", callback_data="trivia_start_japanese")],
-            [InlineKeyboardButton("🎌 Pop Culture", callback_data="trivia_start_pop"),
-             InlineKeyboardButton("🎲 Random", callback_data="trivia_start_random")],
-            [InlineKeyboardButton("🔙 Back", callback_data="main_menu")]
-        ]
-        
-        await query.edit_message_text(text, reply_markup=InlineKeyboardMarkup(keyboard), parse_mode='Markdown')
-
-    async def coin_flip_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Coin flip handler"""
-        result = random.choice(['Heads', 'Tails'])
-        await self.suspense_reveal(update.callback_query, f"🪙 **{result}**!", self.get_back_keyboard())
-
-    async def roll_dice_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Dice roll handler"""
-        result = random.randint(1, 6)
-        dice_emojis = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅']
-        await self.suspense_reveal(update.callback_query, f"{dice_emojis[result-1]} **{result}**!", self.get_back_keyboard())
-
+    # MOOD HANDLERS
     async def mood_menu_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Mood menu handler"""
         query = update.callback_query
@@ -2066,6 +2402,18 @@ Current: {current_mood.title()} {self.moods[current_mood]['emoji']}
                     f"{emoji} Mood set to {mood.title()}!",
                     reply_markup=self.get_back_keyboard("mood_menu")
                 )
+
+    # SIMPLE GAME HANDLERS
+    async def coin_flip_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Coin flip handler"""
+        result = random.choice(['Heads', 'Tails'])
+        await self.suspense_reveal(update.callback_query, f"🪙 **{result}**!", self.get_back_keyboard())
+
+    async def roll_dice_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Dice roll handler"""
+        result = random.randint(1, 6)
+        dice_emojis = ['⚀', '⚁', '⚂', '⚃', '⚄', '⚅']
+        await self.suspense_reveal(update.callback_query, f"{dice_emojis[result-1]} **{result}**!", self.get_back_keyboard())
 
     # PLACEHOLDER HANDLERS
     async def games_menu_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -2123,31 +2471,6 @@ More games coming soon!
         keyboard = self.get_back_keyboard("main_menu")
         await query.edit_message_text(text, reply_markup=keyboard, parse_mode='Markdown')
 
-    # UNUSED PLACEHOLDER HANDLERS
-    async def karma_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Karma handler placeholder"""
-        pass
-
-    async def history_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """History handler placeholder"""
-        pass
-
-    async def split_bill_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Split bill handler placeholder"""
-        pass
-
-    async def lottery_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Lottery handler placeholder"""
-        pass
-
-    async def lottery_action_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Lottery action handler placeholder"""
-        pass
-
-    async def roulette_handler(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Roulette handler placeholder"""
-        pass
-
     async def suspense_reveal(self, query, final_text, keyboard):
         """Suspenseful reveal animation"""
         await query.edit_message_text("🎲 Making decision...")
@@ -2160,17 +2483,22 @@ More games coming soon!
         await query.edit_message_text(final_text, reply_markup=keyboard, parse_mode='Markdown')
 
     async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Handle text messages and easter eggs"""
+        """Handle text messages, passive triggers, and easter eggs"""
         if not update.message or not update.message.text:
             return
             
         chat_id = update.effective_chat.id
-        text = update.message.text.strip().lower()
+        text = update.message.text.strip()
         
         if update.effective_user:
             self.group_data[chat_id]['active_members'].add(update.effective_user.id)
         
+        # First check for passive triggers
+        if await self.check_passive_triggers(update, context):
+            return  # Passive trigger handled, stop processing
+        
         # Easter Eggs
+        text_lower = text.lower()
         easter_eggs = {
             'konami': "🕹️ **KONAMI CODE ACTIVATED!** 🕹️\nExtra karma for everyone!",
             'ninja': "🥷 **NINJA MODE UNLOCKED!** 🥷\nStealth payments activated!",
@@ -2180,13 +2508,13 @@ More games coming soon!
         }
         
         for trigger, message in easter_eggs.items():
-            if trigger in text:
+            if trigger in text_lower:
                 self.group_data[chat_id]['discovered_easter_eggs'].add(trigger)
                 await update.message.reply_text(message, reply_markup=self.get_main_menu_keyboard(chat_id), parse_mode='Markdown')
                 return
         
-        # Show main menu for keywords
-        if text in ['menu', 'start', 'help', '/start', '/help']:
+        # Show main menu for direct commands
+        if text_lower in ['menu', 'start', 'help', '/start', '/help']:
             await self.start(update, context)
 
 
@@ -2203,7 +2531,7 @@ def main():
         return
     
     # Create bot instance
-    bot = DecisionBot()
+    bot = CrewCaptain()
     
     # Create application
     application = Application.builder().token(BOT_TOKEN).build()
@@ -2223,12 +2551,13 @@ def main():
             url_path="/webhook",
             webhook_url=webhook_url
         )
-        logger.info(f"🚀 Bot running on Railway with webhook: {webhook_url}")
+        logger.info(f"🚀 CrewCaptain running on Railway with webhook: {webhook_url}")
     else:
         # Local development with polling
-        logger.info("🚀 Bot running locally with polling...")
+        logger.info("🚀 CrewCaptain running locally with polling...")
+        logger.info("🎧 PASSIVE LISTENING: ✅ Enabled (10s cooldown)")
         logger.info("🎵 YouTube API: " + ("✅ Enabled" if YOUTUBE_API_KEY else "❌ Disabled (using fallback)"))
-        logger.info("😂 Russian Memes: ✅ Enabled (Reddit API - FREE)")
+        logger.info("😂 Russian Memes: ✅ Enabled (Reddit API)")
         logger.info("🧠 Trivia Questions: ✅ 150+ Questions")
         logger.info("🍻 Drinking Games: ✅ 100+ Never Have I Ever")
         logger.info("🎭 Personalities: ✅ 10 Different Moods")
